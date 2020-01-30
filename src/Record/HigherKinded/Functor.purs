@@ -9,7 +9,7 @@ import Type.Data.RowList (RLProxy(..))
 
 ----------------------------------------------------------------
 
-class RecordFunctor fr gr f g | fr -> f, gr -> g, fr g -> gr where
+class RecordFunctor fr gr f g | fr -> f, gr -> g, fr g -> gr, gr f -> fr where
   mapRecord :: (f ~> g) -> { | fr } -> { | gr }
 
 instance instanceRecordFunctor ::

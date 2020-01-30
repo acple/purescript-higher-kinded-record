@@ -13,7 +13,7 @@ import Type.Data.RowList (RLProxy(..))
 
 ----------------------------------------------------------------
 
-class LiftRecord r fr f | fr -> f, r f -> fr where
+class LiftRecord r fr f | fr -> r f, r f -> fr where
   liftRecord' :: (forall a. a -> f a) -> { | r } -> { | fr }
 
 instance instanceLiftRecord ::
