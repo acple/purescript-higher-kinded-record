@@ -4,18 +4,16 @@ import Prelude
 
 import Control.Monad.Error.Class (class MonadError)
 import Data.Const (Const(..))
-import Data.DateTime as DT
 import Data.Identity (Identity(..))
 import Data.List as List
 import Data.Maybe (Maybe(..), maybe)
 import Data.Unfoldable as Unfoldable
 import Effect (Effect)
-import Effect.Aff (Aff, Error, Milliseconds(..), delay, launchAff_, parallel, sequential)
-import Effect.Class (liftEffect)
-import Effect.Now as Now
+import Effect.Aff (Error, launchAff_)
 import Record.HigherKinded (foldMapRecord, liftRecord, liftRecord', mapRecord, sequenceRecord, traverseRecord, unliftRecord, zipWithRecord)
+import Test.Example as Example
 import Test.Spec (describe, it)
-import Test.Spec.Assertions (shouldEqual, shouldNotSatisfy, shouldSatisfy)
+import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter (consoleReporter)
 import Test.Spec.Runner (defaultConfig, runSpec')
 
@@ -41,8 +39,11 @@ main = do
         traverseRecordTest
       it "checks foldMapRecord functionality" do
         foldMapRecordTest
+    describe "Examples" do
+      it "runs example" do
+        pure Example.example
       it "runs parallel traversing example" do
-        parallelTraverseTest
+        Example.parallelTraverseExample
 
 ----------------------------------------------------------------
 
@@ -118,20 +119,3 @@ foldMapRecordTest = do
   let source = { a: Just 123, b: Nothing :: Maybe Int, c: Nothing :: Maybe String, d: Just "abc" }
   let result = foldMapRecord (maybe "Nothing" (const "Just")) source
   result `shouldEqual` "JustNothingNothingJust"
-
-parallelTraverseTest :: Aff Unit
-parallelTraverseTest = do
-  parallelDuration <- runWith (sequential <<< traverseRecord parallel)
-  parallelDuration `shouldSatisfy` (_ <= Milliseconds 500.0)
-  sequentialDuration <- runWith sequenceRecord
-  sequentialDuration `shouldNotSatisfy` (_ <= Milliseconds 500.0)
-  where
-  withDelay :: forall a. a -> Aff a
-  withDelay a = delay (Milliseconds 300.0) $> a
-  runWith traverse = do
-    let source = { a: withDelay 123, b: withDelay [ 1, 2, 3 ], c: withDelay "abc" }
-    before <- liftEffect Now.nowDateTime
-    result <- traverse source
-    after <- liftEffect Now.nowDateTime
-    result `shouldEqual` { a: 123, b: [ 1, 2, 3 ], c: "abc" }
-    pure $ DT.diff after before
