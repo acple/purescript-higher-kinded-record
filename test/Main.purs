@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Control.Monad.Error.Class (class MonadError)
+import Data.Array as Array
 import Data.Const (Const(..))
 import Data.Identity (Identity(..))
 import Data.List as List
@@ -10,7 +11,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Unfoldable as Unfoldable
 import Effect (Effect)
 import Effect.Aff (Error, launchAff_)
-import Record.HigherKinded (foldMapRecord, liftRecord, liftRecord', mapRecord, sequenceRecord, traverseRecord, unliftRecord, zipWithRecord)
+import Record.HigherKinded (foldMapRecord, liftRecord, liftRecord', mapRecord, sequenceRecord, traverseRecord, unliftRecord, zipRecord, zipWithRecord)
 import Test.Example as Example
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -49,14 +50,18 @@ main = do
 
 mapRecordTest :: forall m. MonadError Error m => m Unit
 mapRecordTest = do
-  let source = liftRecord { x: 123, y: [ 1, 2, 3 ], z: "123" }
+  let toArrayRecord = mapRecord Unfoldable.fromMaybe
   do
-    let toArrayRecord = mapRecord Unfoldable.fromMaybe
+    let source = liftRecord { x: 123, y: [ 1, 2, 3 ], z: "123" }
     let test1 = toArrayRecord source
     test1 `shouldEqual` { x: [ 123 ], y: [ [ 1, 2, 3 ] ], z: [ "123" ] }
-    let source' = { x: Just 123, y: Nothing, z: Nothing }
-    let test2 = toArrayRecord source'
+  do
+    let source = { x: Just 123, y: Nothing, z: Nothing }
+    let test2 = toArrayRecord source
     test2 `shouldEqual` { x: [ 123 ], y: [], z: [] }
+  do
+    let empty = mapRecord Array.head {}
+    empty `shouldEqual` {}
 
 ----------------------------------------------------------------
 
@@ -75,6 +80,9 @@ liftRecordTest = do
   do
     let test3 = liftRecord' (const $ Const 0) source
     test3 `shouldEqual` { a: Const 0, b: Const 0, c: Const 0, d: Const 0, e: Const 0 }
+  do
+    let empty = liftRecord' Array.singleton {}
+    empty `shouldEqual` {}
 
 ----------------------------------------------------------------
 
@@ -95,18 +103,28 @@ zipRecordTest = do
   do
     let test3 = fill default { x: Nothing, y: Nothing, z: Nothing }
     unliftRecord test3 `shouldEqual` unliftRecord default
+  do
+    let empty = zipRecord {} {}
+    empty `shouldEqual` {}
 
 ----------------------------------------------------------------
 
 sequenceRecordTest :: forall m. MonadError Error m => m Unit
 sequenceRecordTest = do
   let source = { a: 123, b: "abc" }
-  let test1 = liftRecord source
-  sequenceRecord test1 `shouldEqual` Just source
-  let test2 = test1{ a = Nothing }
-  sequenceRecord test2 `shouldEqual` (Nothing :: Maybe { a :: Int, b :: String })
-  let test3 = test1{ b = Nothing }
-  sequenceRecord test3 `shouldEqual` (Nothing :: Maybe { a :: Int, b :: String })
+  let lifted = liftRecord source
+  do
+    let test1 = lifted
+    sequenceRecord lifted `shouldEqual` Just source
+  do
+    let test2 = lifted{ a = Nothing }
+    sequenceRecord test2 `shouldEqual` (Nothing :: Maybe { a :: Int, b :: String })
+  do
+    let test3 = lifted{ b = Nothing }
+    sequenceRecord test3 `shouldEqual` (Nothing :: Maybe { a :: Int, b :: String })
+  do
+    let empty = sequenceRecord {}
+    empty `shouldEqual` Just {}
 
 traverseRecordTest :: forall m. MonadError Error m => m Unit
 traverseRecordTest = do
