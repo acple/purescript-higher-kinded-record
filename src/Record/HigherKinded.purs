@@ -6,6 +6,7 @@ import Control.Comonad (class Comonad, extract)
 import Data.Const (Const(..))
 import Data.Functor.Product (Product, product)
 import Data.Identity (Identity(..))
+import Data.Monoid.Endo (Endo(..))
 import Data.Newtype (un)
 import Prim.RowList as RL
 import Record.Builder as Builder
@@ -68,6 +69,11 @@ foldMapRecord
   :: forall fr r f m. RecordTraversable fr r f (Const m) => Monoid m
   => (forall a. f a -> m) -> { | fr } -> m
 foldMapRecord f = un Const <<< traverseRecord (Const <<< f)
+
+traverseRecord_
+  :: forall fr r f g b. RecordTraversable fr r f (Const (Endo (->) (g Unit))) => Applicative g
+  => (forall a. f a -> g b) -> { | fr } -> g Unit
+traverseRecord_ f = (un Endo <@> pure unit) <<< foldMapRecord (Endo <<< (*>) <<< f)
 
 ----------------------------------------------------------------
 
