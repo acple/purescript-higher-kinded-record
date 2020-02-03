@@ -34,7 +34,7 @@ class RecordTraversable fr r f g | fr -> f, fr g -> r where
 instance instanceRecordTraversable ::
   ( RL.RowToList fr rowList
   , Internal.RecordTraversableInternal rowList fr r f g
-  , Applicative g
+  , Apply g
   ) => RecordTraversable fr r f g where
   traverseRecord f fr = Builder.build <@> {} <$> Internal.traverseRecordImpl rowList f fr
     where
@@ -43,9 +43,7 @@ instance instanceRecordTraversable ::
 sequenceRecord :: forall fr r f. RecordTraversable fr r f f => { | fr } -> f { | r }
 sequenceRecord = traverseRecord identity
 
-foldMapRecord
-  :: forall fr r f m. RecordTraversable fr r f (Const m) => Monoid m
-  => (forall a. f a -> m) -> { | fr } -> m
+foldMapRecord :: forall fr r f m. RecordTraversable fr r f (Const m) => (forall a. f a -> m) -> { | fr } -> m
 foldMapRecord f = un Const <<< traverseRecord (Const <<< f)
 
 traverseRecord_

@@ -42,7 +42,7 @@ instance consRecordTraversable ::
   , Row.Cons key a r' r
   , Row.Lacks key r'
   , RecordTraversableInternal tail fr r' f g
-  , Applicative g
+  , Apply g
   ) => RecordTraversableInternal (RL.Cons key (f a) tail) fr r f g where
   traverseRecordImpl _ f fr =
     (<<<) <$> Builder.insert key <$> f (Record.get key fr) <*> traverseRecordImpl tail f fr
