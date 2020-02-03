@@ -30,25 +30,6 @@ instance consRecordFunctor ::
 
 ----------------------------------------------------------------
 
-class LiftRecordInternal rowList r fr f | rowList f -> fr, fr -> f where
-  liftRecordImpl :: RLProxy rowList -> (forall a. a -> f a) -> Builder.Builder { | r } { | fr }
-
-instance nilLiftRecord :: LiftRecordInternal RL.Nil r r f where
-  liftRecordImpl _ _ = identity
-
-instance consLiftRecord ::
-  ( IsSymbol key
-  , Row.Cons key a r' fr'
-  , Row.Cons key (f a) r' fr
-  , LiftRecordInternal tail r fr' f
-  ) => LiftRecordInternal (RL.Cons key a tail) r fr f where
-  liftRecordImpl _ f = Builder.modify key f <<< liftRecordImpl tail f
-    where
-    key = SProxy :: SProxy key
-    tail = RLProxy :: RLProxy tail
-
-----------------------------------------------------------------
-
 class RecordTraversableInternal rowList fr r f g | rowList -> f, rowList g -> r, fr -> f where
   traverseRecordImpl :: RLProxy rowList -> (f ~> g) -> { | fr } -> g (Builder.Builder {} { | r })
 
@@ -65,6 +46,25 @@ instance consRecordTraversable ::
   ) => RecordTraversableInternal (RL.Cons key (f a) tail) fr r f g where
   traverseRecordImpl _ f fr =
     (<<<) <$> Builder.insert key <$> f (Record.get key fr) <*> traverseRecordImpl tail f fr
+    where
+    key = SProxy :: SProxy key
+    tail = RLProxy :: RLProxy tail
+
+----------------------------------------------------------------
+
+class LiftRecordInternal rowList r fr f | rowList f -> fr, fr -> f where
+  liftRecordImpl :: RLProxy rowList -> (forall a. a -> f a) -> Builder.Builder { | r } { | fr }
+
+instance nilLiftRecord :: LiftRecordInternal RL.Nil r r f where
+  liftRecordImpl _ _ = identity
+
+instance consLiftRecord ::
+  ( IsSymbol key
+  , Row.Cons key a r' fr'
+  , Row.Cons key (f a) r' fr
+  , LiftRecordInternal tail r fr' f
+  ) => LiftRecordInternal (RL.Cons key a tail) r fr f where
+  liftRecordImpl _ f = Builder.modify key f <<< liftRecordImpl tail f
     where
     key = SProxy :: SProxy key
     tail = RLProxy :: RLProxy tail

@@ -28,28 +28,6 @@ instance instanceRecordFunctor ::
 
 ----------------------------------------------------------------
 
-class LiftRecord r fr f | fr -> r f, r f -> fr where
-  liftRecord' :: (forall a. a -> f a) -> { | r } -> { | fr }
-
-instance instanceLiftRecord ::
-  ( RL.RowToList r rowList
-  , Internal.LiftRecordInternal rowList r fr f
-  ) => LiftRecord r fr f where
-  liftRecord' f = Builder.build $ Internal.liftRecordImpl rowList f
-    where
-    rowList = RLProxy :: RLProxy rowList
-
-liftRecord :: forall r fr f. LiftRecord r fr f => Applicative f => { | r } -> { | fr }
-liftRecord = liftRecord' pure
-
-unliftRecord' :: forall fr r f. RecordTraversable fr r f Identity => (forall a. f a -> a) -> { | fr } -> { | r }
-unliftRecord' f = un Identity <<< traverseRecord (pure <<< f)
-
-unliftRecord :: forall fr r f. RecordTraversable fr r f Identity => Comonad f => { | fr } -> { | r }
-unliftRecord = unliftRecord' extract
-
-----------------------------------------------------------------
-
 class RecordTraversable fr r f g | fr -> f, fr g -> r where
   traverseRecord :: (f ~> g) -> { | fr } -> g { | r }
 
@@ -74,6 +52,28 @@ traverseRecord_
   :: forall fr r f g b. RecordTraversable fr r f (Const (Endo (->) (g Unit))) => Applicative g
   => (forall a. f a -> g b) -> { | fr } -> g Unit
 traverseRecord_ f = (un Endo <@> pure unit) <<< foldMapRecord (Endo <<< (*>) <<< f)
+
+----------------------------------------------------------------
+
+class LiftRecord r fr f | fr -> r f, r f -> fr where
+  liftRecord' :: (forall a. a -> f a) -> { | r } -> { | fr }
+
+instance instanceLiftRecord ::
+  ( RL.RowToList r rowList
+  , Internal.LiftRecordInternal rowList r fr f
+  ) => LiftRecord r fr f where
+  liftRecord' f = Builder.build $ Internal.liftRecordImpl rowList f
+    where
+    rowList = RLProxy :: RLProxy rowList
+
+liftRecord :: forall r fr f. LiftRecord r fr f => Applicative f => { | r } -> { | fr }
+liftRecord = liftRecord' pure
+
+unliftRecord' :: forall fr r f. RecordTraversable fr r f Identity => (forall a. f a -> a) -> { | fr } -> { | r }
+unliftRecord' f = un Identity <<< traverseRecord (pure <<< f)
+
+unliftRecord :: forall fr r f. RecordTraversable fr r f Identity => Comonad f => { | fr } -> { | r }
+unliftRecord = unliftRecord' extract
 
 ----------------------------------------------------------------
 
