@@ -28,7 +28,7 @@ instance instanceRecordFunctor ::
 
 ----------------------------------------------------------------
 
-class RecordTraversable fr r f g | fr -> f, fr g -> r where
+class RecordTraversable fr r f g | fr -> r f, r f -> fr where
   traverseRecord :: (f ~> g) -> { | fr } -> g { | r }
 
 instance instanceRecordTraversable ::

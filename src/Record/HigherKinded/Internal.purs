@@ -30,7 +30,7 @@ instance consRecordFunctor ::
 
 ----------------------------------------------------------------
 
-class RecordTraversableInternal rowList fr r f g | rowList -> f, rowList g -> r, fr -> f where
+class RecordTraversableInternal rowList fr r f g | rowList -> f r, fr -> f where
   traverseRecordImpl :: RLProxy rowList -> (f ~> g) -> { | fr } -> g (Builder.Builder {} { | r })
 
 instance nilRecordTraversable :: Applicative g => RecordTraversableInternal RL.Nil fr () f g where
